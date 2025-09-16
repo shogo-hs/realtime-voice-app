@@ -1,7 +1,6 @@
 """音声アシスタントの Web ダッシュボードと制御 API を提供する。"""
 
 import json
-import os
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -84,14 +83,11 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
 
-def run(host: Optional[str] = None, port: Optional[int] = None) -> None:
+def run(host: str = "127.0.0.1", port: int = 8000) -> None:
     """ダッシュボードサーバを起動し、停止指示があるまで待機する。"""
-    bind_host = host or os.getenv("WEB_SERVER_HOST", "127.0.0.1")
-    bind_port = port or int(os.getenv("WEB_SERVER_PORT", "8000"))
-
     WEB_ROOT.mkdir(parents=True, exist_ok=True)
-    with ThreadingHTTPServer((bind_host, bind_port), AppRequestHandler) as httpd:
-        print(f"🌐 Serving realtime assistant UI on http://{bind_host}:{bind_port}")
+    with ThreadingHTTPServer((host, port), AppRequestHandler) as httpd:
+        print(f"🌐 Serving realtime assistant UI on http://{host}:{port}")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

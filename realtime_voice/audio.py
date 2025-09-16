@@ -18,14 +18,12 @@ class AudioHandler:
         channels: int = 1,
         blocksize: int = 960,
         logger: Optional[Callable[[str], None]] = None,
-        enable_audio: bool = True,
     ):
         """フォーマット設定とロガーを受け取って初期化する。"""
         self.sample_rate = sample_rate
         self.channels = channels
         self.blocksize = blocksize
         self.log = logger or print
-        self.enable_audio = enable_audio
 
         self.input_queue: "queue.Queue[bytes]" = queue.Queue()
         self.input_stream: Optional[sd.InputStream] = None
@@ -81,10 +79,6 @@ class AudioHandler:
 
     def start(self) -> None:
         """入出力ストリームを開いて処理を開始する。"""
-        if not self.enable_audio:
-            self.log("🔇 音声入出力を無効化しているため初期化をスキップします")
-            return
-
         self.is_running = True
 
         try:
@@ -123,9 +117,6 @@ class AudioHandler:
 
     def stop(self) -> None:
         """ストリームを停止してデバイスを解放する。"""
-        if not self.enable_audio:
-            return
-
         self.is_running = False
 
         if self.input_stream:

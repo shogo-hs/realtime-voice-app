@@ -28,16 +28,7 @@ async def run_assistant(
 ) -> None:
     """停止要求を受けるまで音声セッションを実行する。"""
     log = logger or print
-    disable_audio = os.getenv("RT_DISABLE_AUDIO", "").lower() in {"1", "true", "yes"}
-    if disable_audio:
-        log("🔇 RT_DISABLE_AUDIO 有効のため音声入出力をスキップします")
-
-    audio_handler = AudioHandler(
-        sample_rate=24000,
-        blocksize=960,
-        logger=log,
-        enable_audio=not disable_audio,
-    )
+    audio_handler = AudioHandler(sample_rate=24000, blocksize=960, logger=log)
 
     def stop_requested() -> bool:
         """停止フラグが立っていれば真を返す。"""
