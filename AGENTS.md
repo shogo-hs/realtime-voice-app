@@ -23,7 +23,12 @@
   ```bash
   uv run python -m realtime_voice.webserver
   ```
+- Docker を利用する場合:
+  ```bash
+  docker compose up --build
+  ```
 - ブラウザで `http://127.0.0.1:8000/` を開いてセッションの開始/停止やログ確認を行う。
+- Dockerfile を更新していない場合は `docker compose up` のみで再ビルドを省略可能。
 - オーディオデバイスの確認:
   ```bash
   uv run python -m sounddevice

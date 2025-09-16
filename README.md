@@ -28,6 +28,18 @@
 3. 「接続開始」を押すと音声ストリームが開始され、ログ欄にステータスが流れます。
 4. 会話を終了する際は「停止」を押すか、サーバープロセスを終了します。
 
+### Docker での実行
+ローカル環境の差分を最小化したい場合は Docker を利用できます。
+
+```bash
+docker compose up --build
+```
+
+- `OPENAI_API_KEY` はホストの `.env` からコンテナに渡されます。
+- 既定ポートは `8000` で、`http://127.0.0.1:8000/` にアクセスします。
+- 停止する際は `Ctrl+C` もしくは `docker compose down` を実行してください。
+- `Dockerfile` や依存を変更した直後のみ `--build` を付けて再ビルドし、通常は `docker compose up` のみで既存イメージを再利用します。
+
 ## ディレクトリ構成（主要）
 - `realtime_voice/audio.py`: サウンドデバイスを扱う入出力ハンドラー。
 - `realtime_voice/assistant.py`: Realtime API セッションの制御ロジック。
