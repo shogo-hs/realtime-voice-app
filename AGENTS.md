@@ -54,8 +54,6 @@
   uv run pre-commit install
   uv run pre-commit run
   ```
-- GitHub Actions (`.github/workflows/ci.yaml`) により、プッシュおよび PR 時に `uv run pre-commit run --all-files` と
-  `uv run pytest -q` が自動で実行される。
 
 ## リポジトリ構成
 - `realtime_voice/audio.py`: 入出力ストリーム管理。
