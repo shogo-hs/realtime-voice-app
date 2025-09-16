@@ -18,8 +18,8 @@ dependencies = [
 [dependency-groups]
 # 開発用ツール群（必要に応じて追加）
 dev = [
-    "pre-commit>=4.0.0",  # Git hooks 管理
-    "ruff>=0.5.0",  # Linter/Formatter
+    "pre-commit~=3.7",
+    "ruff~=0.6",
 ]
 
 [tool.ruff]
