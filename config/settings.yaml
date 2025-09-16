@@ -19,3 +19,4 @@ audio:
   output_channels: 2
   input_device:
   output_device:
+  max_buffer_seconds: 15

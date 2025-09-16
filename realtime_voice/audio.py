@@ -36,8 +36,11 @@ class AudioHandler:
 
         self.audio_buffer = bytearray()
         self.buffer_lock = threading.Lock()
-        self.max_buffer_size = self.sample_rate * 2 * 30  # roughly 30s
+        self.max_buffer_size = (
+            self.sample_rate * max(self.output_channels, 1) * 2 * self._config.max_buffer_seconds
+        )
         self.target_buffer_size = self.blocksize * 8
+        self._buffer_warning_triggered = False
 
     def audio_input_callback(
         self,
@@ -201,8 +204,12 @@ class AudioHandler:
             if current_size + len(audio_data) > self.max_buffer_size:
                 bytes_to_remove = (current_size + len(audio_data)) - self.max_buffer_size
                 self.audio_buffer = self.audio_buffer[bytes_to_remove:]
-                if bytes_to_remove > 0:
-                    self.log(f"⚠️ Buffer near limit, removed {bytes_to_remove} bytes")
+                if bytes_to_remove > 0 and not self._buffer_warning_triggered:
+                    self.log(
+                        f"⚠️ Buffer near limit, removed {bytes_to_remove} bytes; consider lowering "
+                        "max_buffer_seconds"
+                    )
+                    self._buffer_warning_triggered = True
 
             self.audio_buffer.extend(audio_data)
 
@@ -213,6 +220,7 @@ class AudioHandler:
             self.audio_buffer.clear()
             if buffer_size > 0:
                 self.log(f"🗑️ Cleared {buffer_size} bytes from audio buffer")
+            self._buffer_warning_triggered = False
 
     def get_buffer_status(self) -> tuple[int, int]:
         """現在のバッファサイズと上限を返す。"""

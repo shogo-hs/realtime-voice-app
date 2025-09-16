@@ -19,6 +19,7 @@ class AudioConfig(BaseModel):
     output_channels: int = Field(default=2, ge=1, le=2)
     input_device: Optional[Union[int, str]] = Field(default=None)
     output_device: Optional[Union[int, str]] = Field(default=None)
+    max_buffer_seconds: int = Field(default=15, ge=1, le=60)
 
 
 class VoiceConfig(BaseModel):
