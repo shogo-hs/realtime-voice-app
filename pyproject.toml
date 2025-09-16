@@ -29,6 +29,19 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "B", "I"]  # PEP8/pyflakes/bugbear/インポート整形
+extend-select = ["ANN", "D"]  # 型ヒント必須 / ドキュメント必須
+extend-ignore = [
+    "ANN204",  # __init__ の戻り値アノテーションを許容
+    "ANN401",  # Any の使用は許可
+    "D203",  # クラス内 docstring の空行ルールは緩和
+    "D205",  # サマリー行と説明の空行ルールを緩和
+    "D212",  # サマリーの配置に関する厳格な制約を無効化
+    "D213",  # マルチラインサマリーの位置制約を緩和
+    "D400",  # サマリー末尾の句点を強制しない
+    "D401",  # 命令形での記述を必須にしない
+    "D404",  # "Return" などの禁止語句ルールを無効化
+    "D415",  # 1つ目の文の句読点ルールを無効化
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["realtime_voice"]  # プロジェクト内モジュールを先頭に並べる

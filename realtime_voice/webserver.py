@@ -1,8 +1,10 @@
+"""HTTP server exposing the realtime dashboard and control APIs."""
+
 import json
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import parse_qs, urlparse
 
 from .controller import VoiceSessionController
@@ -11,18 +13,23 @@ WEB_ROOT = Path(__file__).resolve().parent / "web"
 
 
 class AppRequestHandler(SimpleHTTPRequestHandler):
+    """Serve static assets and proxy AJAX requests to the controller."""
+
     controller = VoiceSessionController()
 
-    def __init__(self, *args, directory: Optional[str] = None, **kwargs):
+    def __init__(self, *args: Any, directory: Optional[str] = None, **kwargs: Any) -> None:
+        """Initialise handler with the packaged web directory by default."""
         if directory is None:
             directory = str(WEB_ROOT)
         super().__init__(*args, directory=directory, **kwargs)
 
-    def end_headers(self):
+    def end_headers(self) -> None:
+        """Disable caching for API and static responses."""
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
-    def do_GET(self):
+    def do_GET(self) -> None:  # noqa: D401  (GET handler follows BaseHTTPRequestHandler contract)
+        """Handle REST and static GET requests."""
         if self.path.startswith("/api/session/status"):
             self._json_response(AppRequestHandler.controller.status())
             return
@@ -44,7 +51,8 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
             self.path = "/index.html"
         return super().do_GET()
 
-    def do_POST(self):
+    def do_POST(self) -> None:  # noqa: D401
+        """Handle REST-style POST requests from the frontend."""
         if self.path == "/api/session/start":
             started = AppRequestHandler.controller.start()
             status = AppRequestHandler.controller.status()
@@ -61,11 +69,12 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
 
         self.send_error(HTTPStatus.NOT_FOUND, "API endpoint not found")
 
-    def log_message(self, format, *args):  # noqa: A003
-        # reduce console noise
+    def log_message(self, format: str, *args: object) -> None:  # noqa: A003
+        """Suppress default HTTP logging to keep console output clean."""
         return
 
-    def _json_response(self, payload, status: HTTPStatus = HTTPStatus.OK):
+    def _json_response(self, payload: Any, status: HTTPStatus = HTTPStatus.OK) -> None:
+        """Return a JSON response with cache headers disabled."""
         data = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -74,7 +83,8 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
 
-def run(host: str = "127.0.0.1", port: int = 8000):
+def run(host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Start the dashboard server and block until interrupted."""
     WEB_ROOT.mkdir(parents=True, exist_ok=True)
     with ThreadingHTTPServer((host, port), AppRequestHandler) as httpd:
         print(f"🌐 Serving realtime assistant UI on http://{host}:{port}")

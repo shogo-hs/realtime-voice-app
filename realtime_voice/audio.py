@@ -1,14 +1,16 @@
+"""Audio helpers for realtime microphone capture and playback."""
+
 import asyncio
 import queue
 import threading
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 import sounddevice as sd
 
 
 class AudioHandler:
-    """Realtime audio input/output manager"""
+    """Realtime audio input/output manager."""
 
     def __init__(
         self,
@@ -17,6 +19,7 @@ class AudioHandler:
         blocksize: int = 960,
         logger: Optional[Callable[[str], None]] = None,
     ):
+        """Initialise handler with audio format and optional logger."""
         self.sample_rate = sample_rate
         self.channels = channels
         self.blocksize = blocksize
@@ -32,7 +35,14 @@ class AudioHandler:
         self.max_buffer_size = self.sample_rate * 2 * 30  # roughly 30s
         self.target_buffer_size = self.blocksize * 8
 
-    def audio_input_callback(self, indata, frames, time, status):
+    def audio_input_callback(
+        self,
+        indata: np.ndarray,
+        frames: int,
+        time: Any,
+        status: sd.CallbackFlags,
+    ) -> None:
+        """Receive microphone frames and enqueue them for transmission."""
         if status:
             self.log(f"Input status: {status}")
 
@@ -42,7 +52,14 @@ class AudioHandler:
         except queue.Full:
             pass
 
-    def audio_output_callback(self, outdata, frames, time, status):
+    def audio_output_callback(
+        self,
+        outdata: np.ndarray,
+        frames: int,
+        time: Any,
+        status: sd.CallbackFlags,
+    ) -> None:
+        """Stream buffered assistant audio to the speaker output."""
         if status and status != sd.CallbackFlags.OUTPUT_UNDERFLOW:
             self.log(f"Output status: {status}")
 
@@ -60,7 +77,8 @@ class AudioHandler:
             else:
                 outdata.fill(0)
 
-    def start(self):
+    def start(self) -> None:
+        """Open input/output streams and begin audio processing."""
         self.is_running = True
 
         try:
@@ -97,7 +115,8 @@ class AudioHandler:
             self.log(f"Error starting audio streams: {exc}")
             raise
 
-    def stop(self):
+    def stop(self) -> None:
+        """Stop streams and release devices."""
         self.is_running = False
 
         if self.input_stream:
@@ -110,10 +129,11 @@ class AudioHandler:
 
         self.log("Audio streams stopped")
 
-    async def get_input_audio(self, timeout: Optional[float] = 0.1):
+    async def get_input_audio(self, timeout: Optional[float] = 0.1) -> Optional[bytes]:
+        """Return the next audio chunk from the queue if available."""
         loop = asyncio.get_event_loop()
 
-        def _get_item():
+        def _get_item() -> bytes:
             if timeout is None:
                 return self.input_queue.get()
             return self.input_queue.get(timeout=timeout)
@@ -123,7 +143,8 @@ class AudioHandler:
         except queue.Empty:
             return None
 
-    def add_audio_to_buffer(self, audio_data: bytes):
+    def add_audio_to_buffer(self, audio_data: bytes) -> None:
+        """Append assistant audio bytes to the playback buffer."""
         with self.buffer_lock:
             current_size = len(self.audio_buffer)
             if current_size + len(audio_data) > self.max_buffer_size:
@@ -134,13 +155,15 @@ class AudioHandler:
 
             self.audio_buffer.extend(audio_data)
 
-    def clear_audio_buffer(self):
+    def clear_audio_buffer(self) -> None:
+        """Remove all audio currently queued for playback."""
         with self.buffer_lock:
             buffer_size = len(self.audio_buffer)
             self.audio_buffer.clear()
             if buffer_size > 0:
                 self.log(f"🗑️ Cleared {buffer_size} bytes from audio buffer")
 
-    def get_buffer_status(self):
+    def get_buffer_status(self) -> tuple[int, int]:
+        """Return current and maximum buffer sizes in bytes."""
         with self.buffer_lock:
             return len(self.audio_buffer), self.max_buffer_size

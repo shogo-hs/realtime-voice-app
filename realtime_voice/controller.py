@@ -1,21 +1,28 @@
+"""Threaded controller for the realtime voice assistant."""
+
 import asyncio
 import threading
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .assistant import run_assistant
 
 
 @dataclass
 class LogEntry:
+    """Entry captured from the assistant runtime."""
+
     id: int
     timestamp: float
     message: str
 
 
 class VoiceSessionController:
-    def __init__(self):
+    """Coordinate assistant execution and expose state/logs."""
+
+    def __init__(self) -> None:
+        """Initialise controller with empty log history."""
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
@@ -28,7 +35,8 @@ class VoiceSessionController:
         self._state = "idle"
 
     # Logging helpers
-    def _log(self, message: str):
+    def _log(self, message: str) -> None:
+        """Store a message and trim the history if necessary."""
         with self._history_lock:
             entry = LogEntry(self._next_log_id, time.time(), message)
             self._next_log_id += 1
@@ -37,14 +45,17 @@ class VoiceSessionController:
                 self._log_history = self._log_history[-1000:]
 
     def get_logs(self, after_id: int = 0) -> List[LogEntry]:
+        """Return log entries recorded after the provided identifier."""
         with self._history_lock:
             return [entry for entry in self._log_history if entry.id > after_id]
 
     def state(self) -> str:
+        """Expose the current controller state."""
         with self._lock:
             return self._state
 
-    def status(self):
+    def status(self) -> Dict[str, object]:
+        """Return a status summary consumed by the web dashboard."""
         with self._lock:
             running = self._running
             state = self._state
@@ -52,7 +63,8 @@ class VoiceSessionController:
             log_count = len(self._log_history)
         return {"state": state, "running": running, "log_count": log_count}
 
-    def start(self):
+    def start(self) -> bool:
+        """Spin up the background loop if it is not already running."""
         with self._lock:
             if self._running:
                 self._log("⚠️ Assistant already running")
@@ -68,13 +80,15 @@ class VoiceSessionController:
             self._log("🚀 Starting realtime assistant")
             return True
 
-    def _run_loop(self):
+    def _run_loop(self) -> None:
+        """Run the asyncio event loop in the controller thread."""
         assert self._loop is not None
         asyncio.set_event_loop(self._loop)
         self._loop.create_task(self._runner())
         self._loop.run_forever()
 
-    async def _runner(self):
+    async def _runner(self) -> None:
+        """Launch the assistant and monitor its lifecycle."""
         with self._lock:
             self._state = "connecting"
         try:
@@ -95,7 +109,8 @@ class VoiceSessionController:
             loop = asyncio.get_running_loop()
             loop.call_soon(loop.stop)
 
-    def stop(self):
+    def stop(self) -> bool:
+        """Signal the assistant to stop and wait for its thread to finish."""
         with self._lock:
             if not self._running:
                 return False

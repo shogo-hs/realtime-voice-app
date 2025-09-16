@@ -1,3 +1,5 @@
+"""Realtime assistant session orchestration."""
+
 import asyncio
 import os
 import threading
@@ -8,7 +10,10 @@ from dotenv import load_dotenv
 
 from .audio import AudioHandler
 
-INSTRUCTIONS = "You are a helpful voice assistant. ユーザーからの問い合わせに対してダラダラ回答せず、ドライに端的に答えてください。"
+INSTRUCTIONS = (
+    "You are a helpful voice assistant. ユーザーからの問い合わせに対してダラダラ回答せず、"
+    "ドライに端的に答えてください。タメ口のギャルとしてロールプレイしてください。"
+)
 
 
 load_dotenv()
@@ -20,11 +25,13 @@ StopEvent = Union[asyncio.Event, threading.Event]
 async def run_assistant(
     logger: Optional[Callable[[str], None]] = None,
     stop_event: Optional[StopEvent] = None,
-):
+) -> None:
+    """Run the realtime assistant loop until a stop is requested."""
     log = logger or print
     audio_handler = AudioHandler(sample_rate=24000, blocksize=960, logger=log)
 
     def stop_requested() -> bool:
+        """Return True when the caller asked the session to stop."""
         if not stop_event:
             return False
         return stop_event.is_set()
@@ -66,7 +73,8 @@ async def run_assistant(
     audio_chunks_received = 0
     total_audio_bytes = 0
 
-    async def send_audio_task():
+    async def send_audio_task() -> None:
+        """Forward microphone audio chunks to the realtime session."""
         nonlocal receiving_audio
         await session_connected.wait()
         log("🎤 Audio transmission started")
@@ -90,7 +98,8 @@ async def run_assistant(
         except Exception as exc:  # noqa: BLE001
             log(f"Error in send_audio_task: {exc}")
 
-    async def buffer_monitor_task():
+    async def buffer_monitor_task() -> None:
+        """Periodically report playback buffer usage for debugging."""
         await session_connected.wait()
 
         try:
