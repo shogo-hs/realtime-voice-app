@@ -51,6 +51,39 @@
 - **API キー関連エラー**: `.env` の `OPENAI_API_KEY` が正しく設定されているか、Realtime API が有効なキーか確認してください。
 - **停止できない**: UI の停止ボタンで反応しない場合はターミナルで `Ctrl+C` を押し、ログに表示される最終メッセージを確認してください。
 
+## WSL で音声入出力を有効化する
+このアプリは PortAudio（`sounddevice`）を利用するため、WSL では追加設定が必要です。以下の手順で PulseAudio ブリッジを構成すると、WSL 上でもマイク・スピーカーを利用できます。
+
+Note: WSL では物理マイクが直接 ALSA に見えないため、Windows 側の PulseAudio サーバーを経由してデバイスを認識させる必要があります。この設定を行わないと `sounddevice` から「利用可能な入力デバイスが見つかりませんでした」というエラーになります。
+
+1. 依存パッケージを導入します。
+   ```bash
+   sudo apt update
+   sudo apt install -y libportaudio2 portaudio19-dev pulseaudio-utils alsa-utils libasound2 libasound2-plugins
+   ```
+2. ALSA を PulseAudio 経由にするため、`~/.asoundrc` を作成します。
+   ```
+   pcm.!default pulse
+   ctl.!default pulse
+   ```
+3. PulseAudio を再起動します。
+   ```bash
+   pulseaudio -k || true
+   pulseaudio --start
+   ```
+4. WSLg を利用している場合は、PulseAudio サーバーを指す環境変数を `~/.profile` に追記して永続化します。
+   ```bash
+   export PULSE_SERVER=unix:/mnt/wslg/PulseServer
+   ```
+5. 以下のコマンドで接続状態とデバイス列挙を確認します。
+   ```bash
+   pactl info | head
+   arecord -L
+   uv run python -c "import sounddevice as sd; print(sd.query_devices())"
+   ```
+
+   成功していれば、`pulse` / `default` デバイスが表示されます（例: `0 pulse, ALSA (32 in, 32 out)`）。
+
 ## 開発メモ
 - 依存パッケージの追加は `uv add <package>` を使用してください。
 - テストは `pytest` を想定しています（`uv run pytest -q`）。
