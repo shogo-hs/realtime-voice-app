@@ -54,3 +54,7 @@ known-first-party = ["realtime_voice"]  # プロジェクト内モジュール�
 quote-style = "double"  # 文字列リテラルはダブルクォート
 indent-style = "space"  # インデントはスペース
 skip-magic-trailing-comma = false  # マジックカンマを有効にして差分を抑制
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["realtime_voice", "realtime_voice.*"]
