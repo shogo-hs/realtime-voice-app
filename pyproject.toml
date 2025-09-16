@@ -1,0 +1,39 @@
+[project]
+# プロジェクト基本情報
+name = "gpt-realtime-trial"
+version = "0.1.0"
+description = "Realtime voice assistant with OpenAI Realtime API"
+readme = "README.md"
+# 実行には Python 3.12 以上が必須
+requires-python = ">=3.12"
+# ランタイム依存ライブラリ（Realtime API + 音声入出力）
+dependencies = [
+    "numpy>=2.3.3",  # 行列演算・バッファ変換
+    "openai-agents>=0.3.0",  # RealtimeAgent/RealtimeRunner
+    "python-dotenv>=1.0.0",  # .env からの設定読込
+    "sounddevice>=0.5.2",  # マイク/スピーカー制御
+    "websockets>=15.0.1",  # Realtime API の通信層
+]
+
+[dependency-groups]
+# 開発用ツール群（必要に応じて追加）
+dev = [
+    "pre-commit>=4.0.0",  # Git hooks 管理
+    "ruff>=0.5.0",  # Linter/Formatter
+]
+
+[tool.ruff]
+# 対応する Python バージョンと最大行長
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B", "I"]  # PEP8/pyflakes/bugbear/インポート整形
+
+[tool.ruff.lint.isort]
+known-first-party = ["realtime_voice"]  # プロジェクト内モジュールを先頭に並べる
+
+[tool.ruff.format]
+quote-style = "double"  # 文字列リテラルはダブルクォート
+indent-style = "space"  # インデントはスペース
+skip-magic-trailing-comma = false  # マジックカンマを有効にして差分を抑制

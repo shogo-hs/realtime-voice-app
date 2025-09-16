@@ -1,0 +1,101 @@
+:root {
+  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+header h1 {
+  margin: 0 0 4px;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: #475569;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+button {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  background: #2563eb;
+  color: white;
+  transition: background 0.2s ease;
+}
+
+button[disabled] {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+button:not([disabled]):hover {
+  background: #1d4ed8;
+}
+
+#statusLabel {
+  margin-left: auto;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.logs {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+}
+
+.logs h2 {
+  margin-top: 0;
+}
+
+.log-list {
+  max-height: 260px;
+  overflow-y: auto;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.log-entry {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  border-left: 3px solid #2563eb;
+}
+
+.notes {
+  margin-top: 32px;
+}
+
+.notes h2 {
+  margin-bottom: 12px;
+}
+
+.notes ol {
+  margin: 0 0 0 18px;
+  color: #475569;
+  line-height: 1.6;
+}

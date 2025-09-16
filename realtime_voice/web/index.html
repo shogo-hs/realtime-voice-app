@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Realtime Voice Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Realtime Voice Assistant</h1>
+        <p class="subtitle">ローカルマイクでOpenAI Realtime APIに接続します。</p>
+      </header>
+
+      <section class="controls">
+        <button id="startBtn">接続開始</button>
+        <button id="stopBtn" disabled>停止</button>
+        <span id="statusLabel">待機中</span>
+      </section>
+
+      <section class="logs">
+        <h2>アクティビティログ</h2>
+        <div id="logList" class="log-list" aria-live="polite"></div>
+      </section>
+
+      <section class="notes">
+        <h2>使い方</h2>
+        <ol>
+          <li>.env に <code>OPENAI_API_KEY</code> を設定します。</li>
+          <li>「接続開始」を押すとローカルマイクが利用されます。</li>
+          <li>会話が不要になったら「停止」を押してください。</li>
+        </ol>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>
