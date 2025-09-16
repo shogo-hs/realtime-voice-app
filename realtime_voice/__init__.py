@@ -1,4 +1,4 @@
-"""Realtime voice assistant package"""
+"""Realtime 音声アシスタントのエントリポイントをまとめたパッケージ。"""
 
 from .assistant import run_assistant
 from .controller import VoiceSessionController

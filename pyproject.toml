@@ -20,6 +20,7 @@ dependencies = [
 dev = [
     "pre-commit~=3.7",
     "ruff~=0.6",
+    "pytest~=8.3",
 ]
 
 [tool.ruff]

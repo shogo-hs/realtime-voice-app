@@ -1,4 +1,4 @@
-"""HTTP server exposing the realtime dashboard and control APIs."""
+"""音声アシスタントの Web ダッシュボードと制御 API を提供する。"""
 
 import json
 from http import HTTPStatus
@@ -13,23 +13,23 @@ WEB_ROOT = Path(__file__).resolve().parent / "web"
 
 
 class AppRequestHandler(SimpleHTTPRequestHandler):
-    """Serve static assets and proxy AJAX requests to the controller."""
+    """静的ファイルを配信し、制御 API をコントローラへ橋渡しする。"""
 
     controller = VoiceSessionController()
 
     def __init__(self, *args: Any, directory: Optional[str] = None, **kwargs: Any) -> None:
-        """Initialise handler with the packaged web directory by default."""
+        """同梱の Web ディレクトリを既定値として初期化する。"""
         if directory is None:
             directory = str(WEB_ROOT)
         super().__init__(*args, directory=directory, **kwargs)
 
     def end_headers(self) -> None:
-        """Disable caching for API and static responses."""
+        """API/静的レスポンスのキャッシュを無効化する。"""
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
-    def do_GET(self) -> None:  # noqa: D401  (GET handler follows BaseHTTPRequestHandler contract)
-        """Handle REST and static GET requests."""
+    def do_GET(self) -> None:  # noqa: D401
+        """REST API と静的 GET を処理する。"""
         if self.path.startswith("/api/session/status"):
             self._json_response(AppRequestHandler.controller.status())
             return
@@ -52,7 +52,7 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self) -> None:  # noqa: D401
-        """Handle REST-style POST requests from the frontend."""
+        """フロントエンドからの制御 POST を処理する。"""
         if self.path == "/api/session/start":
             started = AppRequestHandler.controller.start()
             status = AppRequestHandler.controller.status()
@@ -70,11 +70,11 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         self.send_error(HTTPStatus.NOT_FOUND, "API endpoint not found")
 
     def log_message(self, format: str, *args: object) -> None:  # noqa: A003
-        """Suppress default HTTP logging to keep console output clean."""
+        """標準の HTTP ログ出力を抑制する。"""
         return
 
     def _json_response(self, payload: Any, status: HTTPStatus = HTTPStatus.OK) -> None:
-        """Return a JSON response with cache headers disabled."""
+        """キャッシュ無効な JSON レスポンスを返す。"""
         data = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -84,7 +84,7 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
 
 
 def run(host: str = "127.0.0.1", port: int = 8000) -> None:
-    """Start the dashboard server and block until interrupted."""
+    """ダッシュボードサーバを起動し、停止指示があるまで待機する。"""
     WEB_ROOT.mkdir(parents=True, exist_ok=True)
     with ThreadingHTTPServer((host, port), AppRequestHandler) as httpd:
         print(f"🌐 Serving realtime assistant UI on http://{host}:{port}")

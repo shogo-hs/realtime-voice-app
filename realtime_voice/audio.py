@@ -1,4 +1,4 @@
-"""Audio helpers for realtime microphone capture and playback."""
+"""Realtime 音声入出力を扱うユーティリティ群。"""
 
 import asyncio
 import queue
@@ -10,7 +10,7 @@ import sounddevice as sd
 
 
 class AudioHandler:
-    """Realtime audio input/output manager."""
+    """音声ストリームの入出力とバッファを管理する。"""
 
     def __init__(
         self,
@@ -19,7 +19,7 @@ class AudioHandler:
         blocksize: int = 960,
         logger: Optional[Callable[[str], None]] = None,
     ):
-        """Initialise handler with audio format and optional logger."""
+        """フォーマット設定とロガーを受け取って初期化する。"""
         self.sample_rate = sample_rate
         self.channels = channels
         self.blocksize = blocksize
@@ -42,7 +42,7 @@ class AudioHandler:
         time: Any,
         status: sd.CallbackFlags,
     ) -> None:
-        """Receive microphone frames and enqueue them for transmission."""
+        """マイク入力を PCM16 に変換して送信用キューへ積む。"""
         if status:
             self.log(f"Input status: {status}")
 
@@ -59,7 +59,7 @@ class AudioHandler:
         time: Any,
         status: sd.CallbackFlags,
     ) -> None:
-        """Stream buffered assistant audio to the speaker output."""
+        """バッファ済み音声をステレオ出力へ書き込む。"""
         if status and status != sd.CallbackFlags.OUTPUT_UNDERFLOW:
             self.log(f"Output status: {status}")
 
@@ -78,7 +78,7 @@ class AudioHandler:
                 outdata.fill(0)
 
     def start(self) -> None:
-        """Open input/output streams and begin audio processing."""
+        """入出力ストリームを開いて処理を開始する。"""
         self.is_running = True
 
         try:
@@ -116,7 +116,7 @@ class AudioHandler:
             raise
 
     def stop(self) -> None:
-        """Stop streams and release devices."""
+        """ストリームを停止してデバイスを解放する。"""
         self.is_running = False
 
         if self.input_stream:
@@ -130,7 +130,7 @@ class AudioHandler:
         self.log("Audio streams stopped")
 
     async def get_input_audio(self, timeout: Optional[float] = 0.1) -> Optional[bytes]:
-        """Return the next audio chunk from the queue if available."""
+        """キューに溜まった音声を取得し、無ければ None を返す。"""
         loop = asyncio.get_event_loop()
 
         def _get_item() -> bytes:
@@ -144,7 +144,7 @@ class AudioHandler:
             return None
 
     def add_audio_to_buffer(self, audio_data: bytes) -> None:
-        """Append assistant audio bytes to the playback buffer."""
+        """再生用バッファへ音声データを追加する。"""
         with self.buffer_lock:
             current_size = len(self.audio_buffer)
             if current_size + len(audio_data) > self.max_buffer_size:
@@ -156,7 +156,7 @@ class AudioHandler:
             self.audio_buffer.extend(audio_data)
 
     def clear_audio_buffer(self) -> None:
-        """Remove all audio currently queued for playback."""
+        """再生バッファをクリアする。"""
         with self.buffer_lock:
             buffer_size = len(self.audio_buffer)
             self.audio_buffer.clear()
@@ -164,6 +164,6 @@ class AudioHandler:
                 self.log(f"🗑️ Cleared {buffer_size} bytes from audio buffer")
 
     def get_buffer_status(self) -> tuple[int, int]:
-        """Return current and maximum buffer sizes in bytes."""
+        """現在のバッファサイズと上限を返す。"""
         with self.buffer_lock:
             return len(self.audio_buffer), self.max_buffer_size

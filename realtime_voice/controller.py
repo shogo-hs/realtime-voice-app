@@ -1,4 +1,4 @@
-"""Threaded controller for the realtime voice assistant."""
+"""音声アシスタントをバックグラウンド実行するコントローラ。"""
 
 import asyncio
 import threading
@@ -11,7 +11,7 @@ from .assistant import run_assistant
 
 @dataclass
 class LogEntry:
-    """Entry captured from the assistant runtime."""
+    """アシスタント実行時のログエントリを表す。"""
 
     id: int
     timestamp: float
@@ -19,10 +19,10 @@ class LogEntry:
 
 
 class VoiceSessionController:
-    """Coordinate assistant execution and expose state/logs."""
+    """アシスタントの起動・停止と状態問い合わせを司る。"""
 
     def __init__(self) -> None:
-        """Initialise controller with empty log history."""
+        """内部状態を初期化し、空のログ履歴を用意する。"""
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
@@ -36,7 +36,7 @@ class VoiceSessionController:
 
     # Logging helpers
     def _log(self, message: str) -> None:
-        """Store a message and trim the history if necessary."""
+        """メッセージを履歴に追加し、必要に応じてトリムする。"""
         with self._history_lock:
             entry = LogEntry(self._next_log_id, time.time(), message)
             self._next_log_id += 1
@@ -45,17 +45,17 @@ class VoiceSessionController:
                 self._log_history = self._log_history[-1000:]
 
     def get_logs(self, after_id: int = 0) -> List[LogEntry]:
-        """Return log entries recorded after the provided identifier."""
+        """指定 ID 以降のログエントリを返す。"""
         with self._history_lock:
             return [entry for entry in self._log_history if entry.id > after_id]
 
     def state(self) -> str:
-        """Expose the current controller state."""
+        """現在の状態を返す。"""
         with self._lock:
             return self._state
 
     def status(self) -> Dict[str, object]:
-        """Return a status summary consumed by the web dashboard."""
+        """Web ダッシュボード向けに状態を要約して返す。"""
         with self._lock:
             running = self._running
             state = self._state
@@ -64,7 +64,7 @@ class VoiceSessionController:
         return {"state": state, "running": running, "log_count": log_count}
 
     def start(self) -> bool:
-        """Spin up the background loop if it is not already running."""
+        """未起動であればバックグラウンドスレッドを立ち上げる。"""
         with self._lock:
             if self._running:
                 self._log("⚠️ Assistant already running")
@@ -81,14 +81,14 @@ class VoiceSessionController:
             return True
 
     def _run_loop(self) -> None:
-        """Run the asyncio event loop in the controller thread."""
+        """専用スレッドで asyncio ループを実行する。"""
         assert self._loop is not None
         asyncio.set_event_loop(self._loop)
         self._loop.create_task(self._runner())
         self._loop.run_forever()
 
     async def _runner(self) -> None:
-        """Launch the assistant and monitor its lifecycle."""
+        """アシスタントを起動してライフサイクルを監視する。"""
         with self._lock:
             self._state = "connecting"
         try:
@@ -110,7 +110,7 @@ class VoiceSessionController:
             loop.call_soon(loop.stop)
 
     def stop(self) -> bool:
-        """Signal the assistant to stop and wait for its thread to finish."""
+        """停止を指示し、終了まで待機する。"""
         with self._lock:
             if not self._running:
                 return False

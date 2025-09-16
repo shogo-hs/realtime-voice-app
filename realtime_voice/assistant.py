@@ -1,4 +1,4 @@
-"""Realtime assistant session orchestration."""
+"""Realtime エージェントとの対話セッションを制御する。"""
 
 import asyncio
 import os
@@ -26,12 +26,12 @@ async def run_assistant(
     logger: Optional[Callable[[str], None]] = None,
     stop_event: Optional[StopEvent] = None,
 ) -> None:
-    """Run the realtime assistant loop until a stop is requested."""
+    """停止要求を受けるまで音声セッションを実行する。"""
     log = logger or print
     audio_handler = AudioHandler(sample_rate=24000, blocksize=960, logger=log)
 
     def stop_requested() -> bool:
-        """Return True when the caller asked the session to stop."""
+        """停止フラグが立っていれば真を返す。"""
         if not stop_event:
             return False
         return stop_event.is_set()
@@ -74,7 +74,7 @@ async def run_assistant(
     total_audio_bytes = 0
 
     async def send_audio_task() -> None:
-        """Forward microphone audio chunks to the realtime session."""
+        """マイク入力をリアルタイムセッションへ順次送信する。"""
         nonlocal receiving_audio
         await session_connected.wait()
         log("🎤 Audio transmission started")
@@ -99,7 +99,7 @@ async def run_assistant(
             log(f"Error in send_audio_task: {exc}")
 
     async def buffer_monitor_task() -> None:
-        """Periodically report playback buffer usage for debugging."""
+        """再生バッファの使用率を定期的にログへ出力する。"""
         await session_connected.wait()
 
         try:

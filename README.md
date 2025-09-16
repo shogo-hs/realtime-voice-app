@@ -50,4 +50,4 @@
   uv run pre-commit install
   uv run pre-commit run --all-files
   ```
-- Docstring（簡潔な説明で可）と型ヒントを欠かしたコードは Ruff により弾かれるため、追加実装では必ず両方を記述してください。
+- Docstring（簡潔な **日本語** で可）と型ヒントを欠かしたコードは Ruff により弾かれるため、追加実装では必ず両方を記述してください。
