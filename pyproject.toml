@@ -13,6 +13,9 @@ dependencies = [
     "python-dotenv>=1.0.0",  # .env からの設定読込
     "sounddevice>=0.5.2",  # マイク/スピーカー制御
     "websockets>=15.0.1",  # Realtime API の通信層
+    "pydantic>=2.7.0",  # 設定とバリデーション
+    "pydantic-settings>=2.6.0",  # YAML+環境変数設定読み込み
+    "pyyaml>=6.0.2",  # YAMLローダー
 ]
 
 [dependency-groups]

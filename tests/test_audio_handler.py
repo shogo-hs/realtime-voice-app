@@ -6,6 +6,7 @@ from typing import List
 import numpy as np
 
 from realtime_voice.audio import AudioHandler
+from realtime_voice.config import AudioConfig
 
 
 class LogCollector:
@@ -23,7 +24,8 @@ class LogCollector:
 def test_audio_input_callback_enqueues_pcm_bytes() -> None:
     """マイク入力が PCM16 バイト列としてキューに積まれる。"""
     collector = LogCollector()
-    handler = AudioHandler(sample_rate=8000, blocksize=320, logger=collector)
+    config = AudioConfig(sample_rate=8000, blocksize=320, input_channels=1, output_channels=2)
+    handler = AudioHandler(config=config, logger=collector)
 
     samples = np.array([[0.0], [0.5], [-0.5]], dtype=np.float32)
     handler.audio_input_callback(samples, frames=len(samples), time=None, status=0)
@@ -38,7 +40,8 @@ def test_audio_input_callback_enqueues_pcm_bytes() -> None:
 def test_add_audio_to_buffer_trims_when_exceeding_capacity() -> None:
     """バッファ上限を超えると古いデータが削除される。"""
     collector = LogCollector()
-    handler = AudioHandler(sample_rate=8000, blocksize=320, logger=collector)
+    config = AudioConfig(sample_rate=8000, blocksize=320, input_channels=1, output_channels=2)
+    handler = AudioHandler(config=config, logger=collector)
     handler.max_buffer_size = 16
 
     handler.add_audio_to_buffer(b"a" * 12)
@@ -53,7 +56,8 @@ def test_add_audio_to_buffer_trims_when_exceeding_capacity() -> None:
 def test_audio_output_callback_consumes_buffer() -> None:
     """再生コールバックがバッファを消費してステレオ出力する。"""
     collector = LogCollector()
-    handler = AudioHandler(sample_rate=8000, blocksize=4, logger=collector)
+    config = AudioConfig(sample_rate=8000, blocksize=128, input_channels=1, output_channels=2)
+    handler = AudioHandler(config=config, logger=collector)
 
     # Prepare 4 frames (int16) worth of audio (8 bytes)
     audio_bytes = (np.array([0, 8192, -8192, 16384], dtype=np.int16)).tobytes()
@@ -74,7 +78,8 @@ def test_audio_output_callback_consumes_buffer() -> None:
 
 def test_get_input_audio_returns_none_when_queue_empty() -> None:
     """キューが空の場合は None が返る。"""
-    handler = AudioHandler(sample_rate=8000, blocksize=320, logger=lambda _: None)
+    config = AudioConfig(sample_rate=8000, blocksize=320, input_channels=1, output_channels=2)
+    handler = AudioHandler(config=config, logger=lambda _: None)
 
     loop = asyncio.new_event_loop()
     try:

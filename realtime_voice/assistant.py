@@ -9,15 +9,7 @@ from agents.realtime import RealtimeAgent, RealtimeRunner
 from dotenv import load_dotenv
 
 from .audio import AudioHandler
-
-INSTRUCTIONS = (
-    "You are a courteous customer support specialist for this voice assistant. Always respond in "
-    "polite Japanese, show empathy for the caller's situation, confirm your understanding before "
-    "answering, and provide clear step-by-step guidance. Keep answers concise but thorough, avoid "
-    "slang, and proactively offer additional help when appropriate. If you are unsure, admit it and "
-    "suggest escalating or checking official documentation."
-)
-
+from .config import AppConfig
 
 load_dotenv()
 
@@ -26,12 +18,14 @@ StopEvent = Union[asyncio.Event, threading.Event]
 
 
 async def run_assistant(
+    *,
+    config: AppConfig,
     logger: Optional[Callable[[str], None]] = None,
     stop_event: Optional[StopEvent] = None,
 ) -> None:
     """停止要求を受けるまで音声セッションを実行する。"""
     log = logger or print
-    audio_handler = AudioHandler(sample_rate=24000, blocksize=960, logger=log)
+    audio_handler = AudioHandler(config=config.audio, logger=log)
 
     def stop_requested() -> bool:
         """停止フラグが立っていれば真を返す。"""
@@ -42,25 +36,22 @@ async def run_assistant(
     if not os.getenv("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY not set")
 
-    agent = RealtimeAgent(
-        name="Assistant",
-        instructions=INSTRUCTIONS,
-    )
+    agent = RealtimeAgent(name="Assistant", instructions=config.voice.instructions)
 
     runner = RealtimeRunner(
         starting_agent=agent,
         config={
             "model_settings": {
                 "model_name": "gpt-realtime",
-                "instructions": INSTRUCTIONS,
-                "voice": "alloy",
+                "instructions": config.voice.instructions,
+                "voice": config.voice.voice,
                 "modalities": ["audio"],
                 "input_audio_format": "pcm16",
                 "output_audio_format": "pcm16",
                 "input_audio_transcription": {"model": "gpt-4o-mini-transcribe"},
                 "turn_detection": {
                     "type": "semantic_vad",
-                    "interrupt_response": True,
+                    "interrupt_response": config.voice.interrupt_response,
                 },
             }
         },

@@ -18,11 +18,18 @@
    OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
    ```
 3. 初回のみ、OS からマイク入力の許可を求められた場合は許可してください。
+4. 入出力デバイスを固定したい場合は環境変数に名称または ID を設定します。
+   ```env
+   AUDIO_INPUT_DEVICE=Built-in Microphone
+   AUDIO_OUTPUT_DEVICE=Built-in Output
+   ```
+5. `config/settings.yaml` にアプリ全体の設定（エージェントの指示文、ログ出力先、音声パラメータ）が
+   まとまっています。値を変更すると、起動時に自動でバリデーションが行われます。
 
 ## 起動方法
 1. Web サーバーを起動します。
    ```bash
-   uv run python -m realtime_voice.webserver
+   uv run python -m realtime_voice --host 127.0.0.1 --port 8000
    ```
 2. ブラウザで `http://127.0.0.1:8000/` を開き、ダッシュボードにアクセスします。
 3. 「接続開始」を押すと音声ストリームが開始され、ログ欄にステータスが流れます。
@@ -34,6 +41,9 @@
 - `realtime_voice/controller.py`: バックグラウンドスレッドの管理とログ蓄積。
 - `realtime_voice/webserver.py`: HTTP API と静的ファイルの配信。
 - `realtime_voice/web/`: `index.html`, `styles.css`, `app.js` からなる Web UI。
+- `realtime_voice/config.py`: YAML + 環境変数から設定を読み込み、バリデーションする。
+- `realtime_voice/logging_utils.py`: ファイル / コンソールへのロギングを初期化。
+- `config/settings.yaml`: アプリ全体の設定ファイル。
 - `AGENTS.md`: コントリビューター向けガイド。
 
 ## よくある質問

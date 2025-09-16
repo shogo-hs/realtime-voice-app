@@ -17,11 +17,13 @@
   OPENAI_API_KEY=sk-...
   ```
 - サンプルとして `.env.example` を用意しているため、新しい変数を追加したら併せて更新。
+- アプリ設定は `config/settings.yaml` に記載し、変更時は設定値のバリデーション結果を確認すること。
+- 音声デバイスを固定する場合は `.env` に `AUDIO_INPUT_DEVICE` / `AUDIO_OUTPUT_DEVICE` を設定する（ID もしくは名称を指定）。
 
 ## 実行方法
 - Web ダッシュボードを起動:
   ```bash
-  uv run python -m realtime_voice.webserver
+  uv run python -m realtime_voice --host 127.0.0.1 --port 8000
   ```
 - ブラウザで `http://127.0.0.1:8000/` を開いてセッションの開始/停止やログ確認を行う。
 - オーディオデバイスの確認:
@@ -52,12 +54,16 @@
   uv run pre-commit install
   uv run pre-commit run
   ```
+- GitHub Actions (`.github/workflows/ci.yaml`) により、プッシュおよび PR 時に `uv run pre-commit run --all-files` と
+  `uv run pytest -q` が自動で実行される。
 
 ## リポジトリ構成
 - `realtime_voice/audio.py`: 入出力ストリーム管理。
 - `realtime_voice/assistant.py`: Realtime API とのセッション制御。
 - `realtime_voice/controller.py`: バックグラウンド実行とログ管理。
 - `realtime_voice/webserver.py`: API + 静的アセット配信。
+- `realtime_voice/config.py`: 設定オブジェクトと YAML ロード処理。
+- `realtime_voice/logging_utils.py`: ログ設定を初期化。
 - `realtime_voice/web/`: `index.html`, `styles.css`, `app.js` の Web UI。
 - `pyproject.toml`, `uv.lock`: 依存関係定義。
 - `tests/`: 追加予定の pytest スイート。

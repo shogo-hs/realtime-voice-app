@@ -1,12 +1,16 @@
 """Realtime 音声入出力を扱うユーティリティ群。"""
 
+from __future__ import annotations
+
 import asyncio
 import queue
 import threading
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 import sounddevice as sd
+
+from .config import AudioConfig
 
 
 class AudioHandler:
@@ -14,15 +18,15 @@ class AudioHandler:
 
     def __init__(
         self,
-        sample_rate: int = 24000,
-        channels: int = 1,
-        blocksize: int = 960,
+        config: AudioConfig,
         logger: Optional[Callable[[str], None]] = None,
     ):
         """フォーマット設定とロガーを受け取って初期化する。"""
-        self.sample_rate = sample_rate
-        self.channels = channels
-        self.blocksize = blocksize
+        self._config = config
+        self.sample_rate = config.sample_rate
+        self.blocksize = config.blocksize
+        self.input_channels = config.input_channels
+        self.output_channels = config.output_channels
         self.log = logger or print
 
         self.input_queue: "queue.Queue[bytes]" = queue.Queue()
@@ -64,7 +68,7 @@ class AudioHandler:
             self.log(f"Output status: {status}")
 
         with self.buffer_lock:
-            required_bytes = frames * 2
+            required_bytes = frames * 2  # 入力は常にモノラルPCM16
 
             if len(self.audio_buffer) >= required_bytes:
                 audio_bytes = bytes(self.audio_buffer[:required_bytes])
@@ -72,36 +76,83 @@ class AudioHandler:
                 audio_array = (
                     np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32767.0
                 )
-                outdata[:, 0] = audio_array
-                outdata[:, 1] = audio_array
+                if self.output_channels == 1:
+                    outdata[:, 0] = audio_array
+                else:
+                    outdata[:, 0] = audio_array
+                    outdata[:, 1] = audio_array
             else:
                 outdata.fill(0)
+
+    def _normalize_device(self, value: Union[int, str, None]) -> Optional[Union[int, str]]:
+        """デバイス指定を sounddevice に渡せる形式へ正規化する。"""
+        if value is None or value == "":
+            return None
+        if isinstance(value, int):
+            return value
+        value = value.strip()
+        if value.lower() == "default":
+            return None
+        if value.isdigit():
+            return int(value)
+        return value
+
+    def _resolve_device(
+        self, kind: str, desired_channels: int
+    ) -> Tuple[Optional[Union[int, str]], dict]:
+        """設定値と環境に基づいて入出力デバイスを選択する。"""
+        override = (
+            self._normalize_device(self._config.input_device)
+            if kind == "input"
+            else self._normalize_device(self._config.output_device)
+        )
+        if override is not None:
+            info = sd.query_devices(override, kind=kind)
+            return override, info
+
+        defaults = sd.default.device or (None, None)
+        index = 0 if kind == "input" else 1
+        candidate = defaults[index]
+        if candidate not in (None, -1):
+            info = sd.query_devices(candidate, kind=kind)
+            return candidate, info
+
+        for device_id, info in enumerate(sd.query_devices()):
+            channels_key = "max_input_channels" if kind == "input" else "max_output_channels"
+            if info.get(channels_key, 0) >= desired_channels:
+                return device_id, info
+
+        raise RuntimeError(
+            f"利用可能な{'入力' if kind == 'input' else '出力'}デバイスが見つかりませんでした"
+        )
 
     def start(self) -> None:
         """入出力ストリームを開いて処理を開始する。"""
         self.is_running = True
 
         try:
-            default_input = sd.query_devices(kind="input")
-            default_output = sd.query_devices(kind="output")
-            self.log(f"📥 Using input device: {default_input['name']}")
-            self.log(f"📤 Using output device: {default_output['name']}")
+            input_device, input_info = self._resolve_device("input", self.input_channels)
+            output_device, output_info = self._resolve_device("output", self.output_channels)
+            self.log(f"📥 使用する入力デバイス: {input_info['name']}")
+            self.log(f"📤 使用する出力デバイス: {output_info['name']}")
 
             self.input_stream = sd.InputStream(
                 samplerate=self.sample_rate,
-                channels=1,
+                channels=self.input_channels,
                 dtype="float32",
                 blocksize=self.blocksize,
                 callback=self.audio_input_callback,
+                device=input_device,
                 latency="low",
             )
 
             self.output_stream = sd.OutputStream(
                 samplerate=self.sample_rate,
-                channels=2,
+                channels=self.output_channels,
                 dtype="float32",
                 blocksize=self.blocksize,
                 callback=self.audio_output_callback,
+                device=output_device,
                 latency="low",
             )
 

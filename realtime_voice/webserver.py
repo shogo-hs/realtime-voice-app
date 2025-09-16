@@ -7,15 +7,17 @@ from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import parse_qs, urlparse
 
-from .controller import VoiceSessionController
+from .runtime import get_services
 
 WEB_ROOT = Path(__file__).resolve().parent / "web"
+
+APP_CONFIG, SESSION_CONTROLLER = get_services()
 
 
 class AppRequestHandler(SimpleHTTPRequestHandler):
     """静的ファイルを配信し、制御 API をコントローラへ橋渡しする。"""
 
-    controller = VoiceSessionController()
+    controller = SESSION_CONTROLLER
 
     def __init__(self, *args: Any, directory: Optional[str] = None, **kwargs: Any) -> None:
         """同梱の Web ディレクトリを既定値として初期化する。"""

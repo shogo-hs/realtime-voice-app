@@ -1,12 +1,14 @@
 """音声アシスタントをバックグラウンド実行するコントローラ。"""
 
 import asyncio
+import logging
 import threading
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from .assistant import run_assistant
+from .config import AppConfig
 
 
 @dataclass
@@ -21,7 +23,7 @@ class LogEntry:
 class VoiceSessionController:
     """アシスタントの起動・停止と状態問い合わせを司る。"""
 
-    def __init__(self) -> None:
+    def __init__(self, *, logger: logging.Logger, config: AppConfig) -> None:
         """内部状態を初期化し、空のログ履歴を用意する。"""
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._thread: Optional[threading.Thread] = None
@@ -30,6 +32,9 @@ class VoiceSessionController:
         self._lock = threading.Lock()
         self._history_lock = threading.Lock()
 
+        self._logger = logger
+        self._config = config
+
         self._log_history: List[LogEntry] = []
         self._next_log_id = 1
         self._state = "idle"
@@ -37,6 +42,7 @@ class VoiceSessionController:
     # Logging helpers
     def _log(self, message: str) -> None:
         """メッセージを履歴に追加し、必要に応じてトリムする。"""
+        self._logger.info(message)
         with self._history_lock:
             entry = LogEntry(self._next_log_id, time.time(), message)
             self._next_log_id += 1
@@ -92,7 +98,11 @@ class VoiceSessionController:
         with self._lock:
             self._state = "connecting"
         try:
-            await run_assistant(logger=self._log, stop_event=self._stop_event)
+            await run_assistant(
+                config=self._config,
+                logger=self._log,
+                stop_event=self._stop_event,
+            )
             with self._lock:
                 if self._stop_event.is_set():
                     self._state = "stopped"
